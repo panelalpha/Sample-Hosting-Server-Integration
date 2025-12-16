@@ -4,7 +4,7 @@ namespace App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Acc
 
 use App\Lib\Integrations\HostingServers\AbstractHostingServer\Account\AbstractInternalDnsServer;
 use App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account;
-use App\Lib\Interfaces\Integrations\DnsServerInterface;
+use App\Lib\Interfaces\Integrations\InternalDnsServerInterface;
 
 /**
  * Manages DNS server operations for hosting accounts.
@@ -15,7 +15,7 @@ use App\Lib\Interfaces\Integrations\DnsServerInterface;
  *
  * @method Account account()
  */
-class Dns extends AbstractInternalDnsServer implements DnsServerInterface
+class Dns extends AbstractInternalDnsServer implements InternalDnsServerInterface
 {
     /**
      * Returns all DNS zones managed by the hosting account.
