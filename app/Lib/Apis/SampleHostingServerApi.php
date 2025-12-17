@@ -1560,6 +1560,17 @@ class SampleHostingServerApi
         ];
     }
 
+    public function listZoneConfigurationRecords(string $username, string $zoneId): array
+    {
+        return [
+            [
+                'name' => 'example.com',
+                'type' => 'CNAME',
+                'value' => 'example.net',
+            ]
+        ];
+    }
+
     public function createDnsRecord(string $username, string $zoneId, array $params): array
     {
         return [

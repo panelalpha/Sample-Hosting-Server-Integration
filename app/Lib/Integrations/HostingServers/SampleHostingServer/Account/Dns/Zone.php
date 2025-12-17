@@ -33,4 +33,26 @@ class Zone extends AbstractZone implements ZoneInterface
 
         return $this->dnsServer()->account()->server()->api()->listDnsRecords($this->dnsServer()->account()->model()->username, $zoneId);
     }
+
+    /**
+     * Returns DNS records that define the zone configuration.
+     *
+     * This method returns a list of records that should exist in every newly
+     * created DNS zone to ensure it is valid and operational on the
+     * nameserver. The exact set can vary per provider,
+     * but the structure is always the same:
+     *
+     * - name (string): Fully-qualified record name (e.g. "example.com." or "@").
+     * - type (string): Record type (e.g. "SOA", "NS").
+     * - value (string): Record value/content (e.g. target nameserver, SOA rdata).
+     *
+     * @return array<array{name: string, type: string, value: string}> List of configuration records to apply to the zone
+     */
+    public function getConfigurationRecords(): array
+    {
+        $zoneName = $this->model()->name;
+        $zoneId = $this->model()->getRemoteId();
+
+        return $this->dnsServer()->account()->server()->api()->listZoneConfigurationRecords($this->dnsServer()->account()->model()->username, $zoneId);
+    }
 }
