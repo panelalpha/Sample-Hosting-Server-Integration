@@ -39,6 +39,9 @@ class Php extends AbstractPhp
     /**
      * Retrieves the currently configured PHP version for a specific domain.
      *
+     * This method is optional.
+     * If it is not implemented, it will not be possible to change the PHP version in the Client Area.
+     *
      * @param string $domainName The domain name to check PHP version for
      * @return array{
      *     label: string,
@@ -46,7 +49,7 @@ class Php extends AbstractPhp
      * }|null PHP version information containing:
      *   - label (string): Human-readable PHP version name (e.g., "PHP 8.2")
      *   - value (string): Technical version identifier (e.g., "8.2")
-     *   Returns null if domain doesn't exist or PHP version cannot be determined
+     *   Returns null if domain doesn't exist or PHP version cannot be determined.
      * @throws Exception When version retrieval fails or domain is inaccessible
      */
     public function getDomainPhpVersion(string $domainName): ?array

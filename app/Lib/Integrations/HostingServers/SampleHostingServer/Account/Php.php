@@ -67,6 +67,9 @@ class Php extends AbstractPhp implements PhpInterface
      * Retrieves current PHP directives and their values for the specified domain,
      * including available options for select-type directives.
      *
+     * This method is optional.
+     * If it is not implemented, it will not be possible to change the PHP settings in the Client Area.
+     *
      * Field descriptions for returned settings:
      * - directive (string): The PHP directive name (e.g., 'display_errors', 'memory_limit')
      * - value (string): The current value of the directive
