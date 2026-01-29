@@ -18,6 +18,17 @@ use App\Models\Timestamp;
 class SftpAccounts extends AbstractSftpAccounts implements SftpAccountsInterface
 {
     /**
+     * List of supported actions for SFTP accounts.
+     *
+     * The 'edit_password' action enables password editing in the Client Area.
+     *
+     * @var array<string>
+     */
+    protected static array $supportedActions = [
+        'edit_password',
+    ];
+    
+    /**
      * Retrieves all SFTP accounts associated with the hosting account.
      *
      * Returns a list of all SFTP users configured for the
