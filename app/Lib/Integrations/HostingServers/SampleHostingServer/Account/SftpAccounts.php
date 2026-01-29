@@ -27,6 +27,7 @@ class SftpAccounts extends AbstractSftpAccounts implements SftpAccountsInterface
      *     user: string,
      * }> List of SFTP accounts containing:
      *   - user (string): The SFTP username
+     *   - password (string): Password. Optional; if provided, the password will be displayed in the Client Area.
      * @throws Exception When SFTP account retrieval fails or account doesn't exist
      */
     public function list(): array
