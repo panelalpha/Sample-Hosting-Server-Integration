@@ -227,6 +227,21 @@ class Account extends AbstractAccount implements AccountInterface
     }
 
     /**
+     * Retrieves the list of host CNAME records required for the account.
+     *
+     * Returns an array of hostnames that should be configured as CNAME records
+     * to ensure proper routing and functionality of the hosting account.
+     *
+     * @return string[] List of required CNAME hostnames
+     */
+    public function getHostCNames(): array
+    {
+        return [
+            'example.com',
+        ];
+    }
+
+    /**
      * Retrieves comprehensive account usage statistics and limits.
      *
      * Provides detailed usage information for various account resources,
