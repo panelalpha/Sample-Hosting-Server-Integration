@@ -79,6 +79,15 @@ class SampleHostingServer extends AbstractHostingServer implements HostingServer
 
     /**
      * Optional.
+     * Indicates that staging sites will be charged as additional sites.
+     * This information will be displayed to users.
+     *
+     * By default returns false.
+     */
+    public static bool $isStagingBillable  = true;
+
+    /**
+     * Optional.
      * Whether any WordPress version can be installed on this server.
      * If false, user cannot select WordPress version during installation.
      *
