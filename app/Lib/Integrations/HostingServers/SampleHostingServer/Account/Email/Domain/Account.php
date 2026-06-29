@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account\Email\Domain;
+namespace App\Lib\Integrations\HostingServers\SampleHostingServer\Account\Email\Domain;
 
 use App\Lib\Integrations\EmailServers\AbstractEmailServer\Domain\AbstractAccount;
-use App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account\Email;
+use App\Lib\Integrations\HostingServers\SampleHostingServer\Account\Email;
 use App\Lib\Interfaces\Integrations\EmailServer\Domain\AccountInterface;
 use Exception;
 use stdClass;

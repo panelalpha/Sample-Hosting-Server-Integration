@@ -1,11 +1,11 @@
 <?php
 
-namespace App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account\Dns\Zone;
+namespace App\Lib\Integrations\HostingServers\SampleHostingServer\Account\Dns\Zone;
 
 use App\Lib\Helpers\DnsRecordHelper;
 use App\Lib\Integrations\DnsServers\AbstractDnsServer\Zone\AbstractRecord;
-use App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account\Dns;
-use App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account\Dns\Zone;
+use App\Lib\Integrations\HostingServers\SampleHostingServer\Account\Dns;
+use App\Lib\Integrations\HostingServers\SampleHostingServer\Account\Dns\Zone;
 use App\Lib\Interfaces\Integrations\DnsServer\Zone\RecordInterface;
 use Exception;
 

@@ -17,6 +17,9 @@ use Exception;
  * @method Account account()
  * @method ApplicationModel model()
  * @method Backups backups()
+ * @method Application\Wordpress wordpress()
+ * @method Application\Git git()
+ * @method Application\Import import()
  */
 class Application extends AbstractApplication implements ApplicationInterface
 {

@@ -465,7 +465,7 @@ class SampleHostingServer extends AbstractHostingServer implements HostingServer
      * - `allowed` — the domain can be hosted
      * - `restricted` — the domain cannot be hosted
      * - `to_verify` — the domain can be hosted (e.g., because it belongs to another user),
-     *   but must be verified (e.g., via a TXT DNS record obtained with $this->getDomainVerificationCode()).
+     *   but must be verified (e.g., via a TXT DNS record obtained with $this->getVerificationDnsRecord()).
      *
      * @param string $domain
      * @return string Verification result
@@ -479,14 +479,39 @@ class SampleHostingServer extends AbstractHostingServer implements HostingServer
     /**
      * Optional method. Required when `checkCanHostDomain()` is implemented.
      *
-     * Returns verification code when it is required
+     * Returns DNS record used to verify domain ownership.
      *
      * @param string $domain
-     * @return string
+     * @return array{name: string, type: string, content: string}
      */
-    public function getDomainVerificationCode(string $domain): string
+    public function getVerificationDnsRecord(string $domain): array
     {
-        return $this->api()->getDomainVerificationCode();
+        return [
+            'name' => $domain,
+            'type' => 'TXT',
+            'content' => $this->api()->getDomainVerificationCode($domain),
+        ];
+    }
+
+    /**
+     * Searches hosting accounts by username substring.
+     *
+     * Used in server synchronization and admin search to find accounts matching
+     * a partial username. Results are returned in the same format as `listAccounts()`.
+     *
+     * @param string $searchTerm Partial username to search for
+     * @param int|null $limit Maximum number of results to return
+     * @return array<array{
+     *   username: string,
+     *   domain: string,
+     *   email: string,
+     *   plan: string|null,
+     *   suspended: bool
+     * }>
+     */
+    public function searchAccountsByUsername(string $searchTerm, ?int $limit = null): array
+    {
+        return $this->api()->searchAccounts($searchTerm, $limit);
     }
 
     /**
@@ -598,22 +623,111 @@ class SampleHostingServer extends AbstractHostingServer implements HostingServer
      *   }
      * }> Array of WordPress installation details
      */
-    public function findWordpresses(): array
+    public function findWordpressSites(): array
     {
-        $installations = $this->api->findWordpressInstalls();
+        return $this->mapWordpressInstallations($this->api->findWordpressSites());
+    }
+
+    /**
+     * Searches WordPress installations by hosting account username substring.
+     *
+     * Returns installations in the same format as `findWordpressSites()`, filtered
+     * to accounts whose username contains the search term.
+     *
+     * @param string $searchTerm Partial account username to search for
+     * @param int|null $limit Maximum number of results to return
+     * @return array<array{
+     *   path: string,
+     *   version: string,
+     *   account: array{
+     *     username: string,
+     *     domain: string,
+     *     email: string,
+     *     plan: string|null,
+     *     suspended: bool
+     *   },
+     *   domain: array{
+     *     domain: string,
+     *     type: string,
+     *     document_root: string
+     *   }
+     * }>
+     */
+    public function searchWordPressSitesByAccountUsername(string $searchTerm, ?int $limit = null): array
+    {
+        return $this->mapWordpressInstallations(
+            $this->api()->searchWordpressSitesByUsername($searchTerm, $limit)
+        );
+    }
+
+    /**
+     * Lists WordPress installations for a specific hosting account.
+     *
+     * Returns a simplified structure without full account details. Returns an empty
+     * array when the account does not exist or is suspended.
+     *
+     * @param string $username The hosting account username
+     * @return array<array{
+     *   path: string,
+     *   version: string,
+     *   domain: array{
+     *     domain: string,
+     *     document_root: string
+     *   }
+     * }>
+     */
+    public function findWordPressSitesOnAccount(string $username): array
+    {
+        $account = $this->findAccount($username);
+        if ($account === null || $account['suspended']) {
+            return [];
+        }
+
+        return array_map(static function (array $wordpress): array {
+            return [
+                'path' => $wordpress['path'],
+                'version' => $wordpress['version'],
+                'domain' => [
+                    'domain' => $wordpress['domain']['domain'],
+                    'document_root' => $wordpress['domain']['document_root'],
+                ],
+            ];
+        }, $this->mapWordpressInstallations($this->api()->findWordpressSites($username)));
+    }
+
+    /**
+     * Maps raw API WordPress installation data to the PanelAlpha discovery format.
+     *
+     * Enriches each installation with account details from `getAccount()` and
+     * normalizes domain information for server synchronization.
+     *
+     * @param array<array{username: string, path: string, version: string, domain: string}> $installations
+     * @return array<array{
+     *   path: string,
+     *   version: string,
+     *   account: array{
+     *     username: string,
+     *     domain: string,
+     *     email: string,
+     *     plan: string|null,
+     *     suspended: bool
+     *   },
+     *   domain: array{
+     *     domain: string,
+     *     type: string,
+     *     document_root: string
+     *   }
+     * }>
+     */
+    private function mapWordpressInstallations(array $installations): array
+    {
         $result = [];
 
-        /** @var array{username: string, path: string, version: string, domain: string} $installation */
         foreach ($installations as $installation) {
-            /** @var array{
-             *     username: string,
-             *     domain: string,
-             *     email:string,
-             *     plan: string|null,
-             *     suspended: bool
-             * } $accountData
-             */
             $accountData = $this->api->getAccount($installation['username']);
+            if ($accountData === null) {
+                continue;
+            }
 
             $result[] = [
                 'path' => $installation['path'],
@@ -629,9 +743,10 @@ class SampleHostingServer extends AbstractHostingServer implements HostingServer
                     'domain' => $installation['domain'],
                     'type' => 'main',
                     'document_root' => $installation['path'],
-                ]
+                ],
             ];
         }
+
         return $result;
     }
 

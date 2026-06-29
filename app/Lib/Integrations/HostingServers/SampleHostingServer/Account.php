@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Lib\Integrations\HostingServers\SampleHostingServerIntegration;
+namespace App\Lib\Integrations\HostingServers\SampleHostingServer;
 
 use App\Events\RemoteDomainCreated;
 use App\Events\RemoteDomainDeleted;
@@ -14,7 +14,7 @@ use App\Models\User;
 use Exception;
 
 /**
- * Manages hosting account operations for the SampleHostingServerIntegration.
+ * Manages hosting account operations for the SampleHostingServer.
  *
  * @method SampleHostingServer server()
  * @method ServerAccount model()
@@ -73,7 +73,7 @@ class Account extends AbstractAccount implements AccountInterface
      * settings unchanged.
      *
      * Accepts configuration fields matching `$accountConfigFields` defined in
-     * SampleHostingServerIntegration.php. All parameters are optional and will
+     * SampleHostingServer.php. All parameters are optional and will
      * only be applied if provided.
      *
      * @param array{plan?: string, space_quota?: string, burst_up_php_workers?: bool, location?: string} $params Exemplary configuration parameters to update:
@@ -372,7 +372,7 @@ class Account extends AbstractAccount implements AccountInterface
      * control panel without additional login credentials.
      *
      * This method is only utilized when `isControlPanelSsoEnabled()` returns
-     * true in the SampleHostingServerIntegration configuration. If SSO is
+     * true in the SampleHostingServer configuration. If SSO is
      * disabled, this method will not be called.
      *
      * @return string The complete SSO URL for control panel access

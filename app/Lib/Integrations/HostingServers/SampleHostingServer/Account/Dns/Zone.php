@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account\Dns;
+namespace App\Lib\Integrations\HostingServers\SampleHostingServer\Account\Dns;
 
 use App\Lib\Integrations\DnsServers\AbstractDnsServer\AbstractZone;
-use App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account\Dns;
+use App\Lib\Integrations\HostingServers\SampleHostingServer\Account\Dns;
 use App\Lib\Interfaces\Integrations\DnsServer\ZoneInterface;
 
 /**

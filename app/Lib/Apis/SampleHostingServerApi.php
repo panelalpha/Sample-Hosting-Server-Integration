@@ -3,7 +3,7 @@
 namespace App\Lib\Apis;
 
 /**
- * Class SampleHostingServerIntegrationApi
+ * Class SampleHostingServerApi
  *
  * Sample API client for hosting server integration.
  * For demonstration purposes only.
@@ -76,9 +76,17 @@ class SampleHostingServerApi
         };
     }
 
-    public function getDomainVerificationCode(): string
+    /**
+     * Returns the TXT record content used to verify domain ownership.
+     *
+     * Called by `SampleHostingServer::getVerificationDnsRecord()`.
+     *
+     * @param string $domain The domain to verify
+     * @return string Verification token placed in the TXT record
+     */
+    public function getDomainVerificationCode(string $domain): string
     {
-        return '1234567890';
+        return 'panelalpha-verify-' . md5($domain);
     }
 
     public function createAccount(array $accountData): array
@@ -195,9 +203,45 @@ class SampleHostingServerApi
         ];
     }
 
+    /**
+     * Discovers WordPress installations on the hosting server.
+     *
+     * Called by `SampleHostingServer::findWordpressSites()` and
+     * `SampleHostingServer::findWordPressSitesOnAccount()`.
+     *
+     * @param string|null $username When set, returns installations for this account only
+     * @return array<array{
+     *     username: string,
+     *     domain: string,
+     *     path: string,
+     *     version: string,
+     *     status: string,
+     *     installed: string
+     * }>
+     */
+    public function findWordpressSites(?string $username = null): array
+    {
+        return $this->findWordpressInstalls($username);
+    }
+
+    /**
+     * Internal alias for `findWordpressSites()`.
+     *
+     * Kept for backwards compatibility with older integration code.
+     *
+     * @param string|null $username When set, returns installations for this account only
+     * @return array<array{
+     *     username: string,
+     *     domain: string,
+     *     path: string,
+     *     version: string,
+     *     status: string,
+     *     installed: string
+     * }>
+     */
     public function findWordpressInstalls(?string $username = null): array
     {
-        return [
+        $installations = [
             [
                 'username' => 'user1',
                 'domain' => 'example.com',
@@ -223,6 +267,80 @@ class SampleHostingServerApi
                 'installed' => '2024-02-25'
             ]
         ];
+
+        if ($username === null) {
+            return $installations;
+        }
+
+        return array_values(array_filter(
+            $installations,
+            static fn (array $installation): bool => $installation['username'] === $username
+        ));
+    }
+
+    /**
+     * Searches hosting accounts by username substring.
+     *
+     * Called by `SampleHostingServer::searchAccountsByUsername()`.
+     *
+     * @param string $searchTerm Partial username to search for
+     * @param int|null $limit Maximum number of results to return
+     * @return array<array{
+     *   username: string,
+     *   domain: string,
+     *   email: string,
+     *   plan: string|null,
+     *   suspended: bool
+     * }>
+     */
+    public function searchAccounts(string $searchTerm, ?int $limit = null): array
+    {
+        $accounts = $this->listAccounts();
+        $searchTerm = strtolower($searchTerm);
+
+        $accounts = array_values(array_filter(
+            $accounts,
+            static fn (array $account): bool => str_contains(strtolower($account['username']), $searchTerm)
+        ));
+
+        if ($limit !== null) {
+            $accounts = array_slice($accounts, 0, $limit);
+        }
+
+        return $accounts;
+    }
+
+    /**
+     * Searches WordPress installations by hosting account username substring.
+     *
+     * Called by `SampleHostingServer::searchWordPressSitesByAccountUsername()`.
+     *
+     * @param string $searchTerm Partial account username to search for
+     * @param int|null $limit Maximum number of results to return
+     * @return array<array{
+     *     username: string,
+     *     domain: string,
+     *     path: string,
+     *     version: string,
+     *     status: string,
+     *     installed: string
+     * }>
+     */
+    public function searchWordpressSitesByUsername(string $searchTerm, ?int $limit = null): array
+    {
+        $installations = $this->findWordpressSites();
+        $searchTerm = strtolower($searchTerm);
+
+        $installations = array_values(array_filter(
+            $installations,
+            static fn (array $installation): bool => str_contains(strtolower($installation['username']), $searchTerm)
+        ));
+
+        if ($limit !== null) {
+            $installations = array_slice($installations, 0, $limit);
+        }
+
+        return $installations;
     }
 
     public function addDomain(string $username, string $domain, string $type = 'addon'): array
@@ -1414,71 +1532,160 @@ class SampleHostingServerApi
         ];
     }
 
+    // -------------------------------------------------------------------------
+    // Backup API methods — custom backup system only.
+    //
+    // Required when Backups::list() is implemented in the integration class
+    // (hasCustomBackupSystem() returns true).
+    //
+    // Not required for the default backup system — remove this entire section
+    // and leave Backups.php as an empty class extending AbstractBackups.
+    //
+    // Expected provider contract (WpCloud-like):
+    // - listBackups:     atomic_backup_id, type, bytes, backup_timestamp
+    // - createBackup:    atomic_backup_request_id
+    // - deleteBackup:    atomic_backup_request_id
+    // - getInfoBackup:   atomic_backup_id, bytes
+    // - downloadBackup:  stream resource
+    // -------------------------------------------------------------------------
+
+    /**
+     * Lists all backups stored on the hosting provider for the given account.
+     *
+     * Custom backup system only. Called by `Backups::list()` to sync provider backups
+     * into PanelAlpha via `Application::syncRemoteBackups()`.
+     *
+     * Not required for: default backup system.
+     *
+     * Each entry must contain:
+     * - atomic_backup_id (string): Provider-side backup identifier
+     * - atomic_site_id (string): Provider-side site/account identifier
+     * - backup_timestamp (string): ISO 8601 creation timestamp
+     * - type (string): `fs`, `db`, `ondemand-fs`, or `ondemand-db`
+     * - bytes (string): Backup size in bytes
+     *
+     * @param string $username The hosting account username
+     * @return array<array{
+     *     atomic_backup_id: string,
+     *     atomic_site_id: string,
+     *     backup_timestamp: string,
+     *     type: string,
+     *     bytes: string
+     * }>
+     */
     public function listBackups(string $username): array
     {
         return [
             [
-                'type' => 'manual',
-                'directory' => true,
-                'database' => true,
-                'mode' => 'full',
-                'has_local_storage' => false,
-                'location_details' => [
-                    'remote_backup_id' => 'backup_' . uniqid(more_entropy: true),
-                    'filename' => 'backup_' . date('Y-m-d_H-i-s') . '.tar.gz',
-                    'filesize' => rand(104857600, 524288000) // Random size between 100MB and 500MB
-                ],
-                'created_at' => (string) (time() - rand(3600, 86400)) // Random time in last 24 hours
+                'atomic_backup_id' => 'backup_fs_' . md5($username . '_fs'),
+                'atomic_site_id' => $username,
+                'backup_timestamp' => date('c', time() - 86400),
+                'type' => 'ondemand-fs',
+                'bytes' => '268435456',
             ],
             [
-                'type' => 'automatic',
-                'directory' => true,
-                'database' => true,
-                'mode' => 'full',
-                'has_local_storage' => false,
-                'location_details' => [
-                    'remote_backup_id' => 'backup_' . uniqid(more_entropy: true),
-                    'filename' => 'auto_backup_' . date('Y-m-d_H-i-s') . '.tar.gz',
-                    'filesize' => rand(52428800, 314572800) // Random size between 50MB and 300MB
-                ],
-                'created_at' => (string) (time() - rand(86400, 604800)) // Random time in last week
-            ]
+                'atomic_backup_id' => 'backup_db_' . md5($username . '_db'),
+                'atomic_site_id' => $username,
+                'backup_timestamp' => date('c', time() - 172800),
+                'type' => 'ondemand-db',
+                'bytes' => '52428800',
+            ],
+            [
+                'atomic_backup_id' => 'backup_auto_fs_' . md5($username . '_auto'),
+                'atomic_site_id' => $username,
+                'backup_timestamp' => date('c', time() - 604800),
+                'type' => 'fs',
+                'bytes' => '314572800',
+            ],
         ];
     }
 
-    public function createBackup(string $username, array $params): array
+    /**
+     * Requests asynchronous backup creation on the hosting provider.
+     *
+     * Custom backup system only. Called by `Backups::requestCreateOnIntegration()`.
+     * The `$type` is either `fs` (files) or `db` (database).
+     *
+     * Not required for: default backup system.
+     *
+     * @param string $username The hosting account username
+     * @param string $type Backup type: `fs` or `db`
+     * @return array{atomic_backup_request_id: int} Provider-side request identifier
+     */
+    public function createBackup(string $username, string $type): array
     {
         return [
-            'success' => true,
-            'backup_id' => 'backup_' . uniqid(more_entropy: true),
-            'message' => 'Backup created successfully'
+            'atomic_backup_request_id' => random_int(1000, 9999),
         ];
     }
 
-    public function deleteBackup(string $username, string $remoteBackupId): array
+    /**
+     * Requests backup deletion on the hosting provider.
+     *
+     * Custom backup system only. Called by `Backups::deleteFromIntegration()`.
+     *
+     * Not required for: default backup system.
+     *
+     * @param string $username The hosting account username
+     * @param string $backupId Provider-side backup identifier (`atomic_backup_id`)
+     * @return array{atomic_backup_request_id: int} Provider-side deletion request identifier
+     */
+    public function deleteBackup(string $username, string $backupId): array
     {
         return [
-            'success' => true,
-            'backup_id' => $remoteBackupId,
-            'message' => 'Backup deleted successfully'
+            'atomic_backup_request_id' => random_int(1000, 9999),
         ];
     }
 
-    public function restoreBackup(string $username, string $remoteBackupId): array
+    /**
+     * Returns metadata for a single backup on the hosting provider.
+     *
+     * Custom backup system only. Called by `Backups::getSizeOnIntegration()`.
+     *
+     * Not required for: default backup system.
+     *
+     * @param string $username The hosting account username
+     * @param string $backupId Provider-side backup identifier (`atomic_backup_id`)
+     * @return array{
+     *     atomic_backup_id: string,
+     *     atomic_site_id: string,
+     *     backup_timestamp: string,
+     *     type: string,
+     *     bytes: string
+     * }
+     */
+    public function getInfoBackup(string $username, string $backupId): array
     {
+        $type = str_contains($backupId, 'db') ? 'ondemand-db' : 'ondemand-fs';
+
         return [
-            'success' => true,
-            'backup_id' => $remoteBackupId,
-            'message' => 'Backup restore initiated successfully'
+            'atomic_backup_id' => $backupId,
+            'atomic_site_id' => $username,
+            'backup_timestamp' => date('c'),
+            'type' => $type,
+            'bytes' => str_contains($backupId, 'db') ? '52428800' : '268435456',
         ];
     }
 
-    public function getBackupDownloadStream(string $username, string $remoteBackupId)
+    /**
+     * Returns a download stream for a backup archive from the hosting provider.
+     *
+     * Custom backup system only. Called by `Backups::getDownloadStreamFromIntegration()`
+     * and `Backups::restoreFromIntegration()`.
+     *
+     * Not required for: default backup system.
+     *
+     * @param string $username The hosting account username
+     * @param string $backupId Provider-side backup identifier (`atomic_backup_id`)
+     * @return resource Stream resource containing the backup archive
+     */
+    public function downloadBackup(string $username, string $backupId)
     {
-        $content = "Sample backup content for: " . $remoteBackupId . "\nGenerated at: " . date('Y-m-d H:i:s');
+        $content = "Sample backup content for: {$backupId}\nGenerated at: " . date('Y-m-d H:i:s');
         $stream = fopen('php://memory', 'r+');
         fwrite($stream, $content);
         rewind($stream);
+
         return $stream;
     }
 

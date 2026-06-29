@@ -1,6 +1,6 @@
 <?php
 
-namespace App\Lib\Integrations\HostingServers\SampleHostingServerIntegration;
+namespace App\Lib\Integrations\HostingServers\SampleHostingServer;
 
 use App\Lib\Integrations\HostingServers\AbstractHostingServer\AbstractPhp;
 use App\Lib\Integrations\HostingServers\SampleHostingServer;

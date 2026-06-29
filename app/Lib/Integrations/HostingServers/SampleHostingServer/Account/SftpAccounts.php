@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account;
+namespace App\Lib\Integrations\HostingServers\SampleHostingServer\Account;
 
 use App\Lib\Integrations\HostingServers\AbstractHostingServer\Account\AbstractSftpAccounts;
-use App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account;
+use App\Lib\Integrations\HostingServers\SampleHostingServer\Account;
 use App\Lib\Interfaces\Integrations\HostingServer\Account\SftpAccountsInterface;
 use App\Models\Timestamp;
 

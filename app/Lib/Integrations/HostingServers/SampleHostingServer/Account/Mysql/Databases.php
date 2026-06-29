@@ -1,9 +1,9 @@
 <?php
 
-namespace App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account\Mysql;
+namespace App\Lib\Integrations\HostingServers\SampleHostingServer\Account\Mysql;
 
 use App\Lib\Integrations\HostingServers\AbstractHostingServer\Account\Mysql\AbstractDatabases;
-use App\Lib\Integrations\HostingServers\SampleHostingServerIntegration\Account;
+use App\Lib\Integrations\HostingServers\SampleHostingServer\Account;
 use App\Lib\Interfaces\Integrations\HostingServer\Account\Mysql\DatabasesInterface;
 use App\Models\Timestamp;
 
